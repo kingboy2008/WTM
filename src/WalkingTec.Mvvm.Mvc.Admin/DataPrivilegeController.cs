@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +9,10 @@ using WalkingTec.Mvvm.Mvc.Admin.ViewModels.DataPrivilegeVMs;
 
 namespace WalkingTec.Mvvm.Admin.Api
 {
-    [ActionDescription("数据权限")]
+    [ActionDescription("DataPrivilege")]
     [ApiController]
     [Route("api/_DataPrivilege")]
-    public class DataPrivilegeController : BaseApiController
+    public class _DataPrivilegeController : BaseApiController
     {
         [ActionDescription("搜索")]
         [HttpPost("Search")]
@@ -105,7 +105,7 @@ namespace WalkingTec.Mvvm.Admin.Api
 
         [HttpPost("BatchDelete")]
         [ActionDescription("批量删除")]
-        public IActionResult BatchDelete(Guid[] ids)
+        public IActionResult BatchDelete(string[] ids)
         {
             var vm = CreateVM<DataPrivilegeBatchVM>();
             if (ids != null && ids.Count() > 0)

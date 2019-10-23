@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 using WalkingTec.Mvvm.Core;
 using WalkingTec.Mvvm.Core.Extensions;
 using WalkingTec.Mvvm.Demo.Models;
@@ -13,6 +13,14 @@ namespace WalkingTec.Mvvm.Demo.ViewModels.SchoolVMs
     {
         public MajorDetailListVM MajorList { get; set; }
 
+        public int? Slider0 { get; set; }
+        public int? Slider1 { get; set; }
+        public int? Slider2 { get; set; }
+
+        public List<ComboSelectListItem> TransferItmes { get; set; }
+
+        public Guid[] SchoolIds { get; set; }
+
 
         public SchoolVM()
         {
@@ -21,6 +29,9 @@ namespace WalkingTec.Mvvm.Demo.ViewModels.SchoolVMs
 
         protected override void InitVM()
         {
+            var ss = DC.Set<School>().ToList();
+            TransferItmes = DC.Set<School>().GetSelectListItems(null, null, y => y.SchoolName);
+
             MajorList.CopyContext(this);
         }
 

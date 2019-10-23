@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -18,11 +18,11 @@ namespace WalkingTec.Mvvm.Mvc.Admin.ViewModels.FrameworkMenuVMs
 
         public override bool DoBatchDelete()
         {
-            if(Ids != null)
+            if (Ids != null)
             {
                 foreach (var item in Ids)
                 {
-                    FrameworkMenu f = new FrameworkMenu { ID = item };
+                    FrameworkMenu f = new FrameworkMenu { ID = Guid.Parse(item) };
                     DC.CascadeDelete(f);
                 }
             }
@@ -37,13 +37,13 @@ namespace WalkingTec.Mvvm.Mvc.Admin.ViewModels.FrameworkMenuVMs
     public class FrameworkMenu_BatchEdit : BaseVM
     {
         public List<Guid> IDs { get; set; }
-        [Display(Name = "菜单显示")]
+        [Display(Name = "ShowOnMenu")]
         public bool ShowOnMenu { get; set; }
 
-        [Display(Name = "父级目录")]
+        [Display(Name = "ParentFolder")]
         public Guid? ParentID { get; set; }
         public List<ComboSelectListItem> AllParents { get; set; }
-        [Display(Name = "图标")]
-        public Guid? IconID { get; set; }
+        [Display(Name = "ICon")]
+        public string ICon { get; set; }
     }
 }

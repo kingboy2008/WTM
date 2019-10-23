@@ -1,13 +1,12 @@
 
 import { Icon, Menu } from 'antd';
+import { MenuProps } from 'antd/lib/menu';
 import GlobalConfig from 'global.config';
+import lodash from 'lodash';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import { Link } from 'react-router-dom';
 import Store from 'store/index';
-import lodash from 'lodash';
-import RequestFiles from 'utils/RequestFiles';
-import { MenuProps } from 'antd/lib/menu';
 
 const { SubMenu } = Menu;
 @observer
@@ -16,7 +15,7 @@ export default class App extends React.Component<any, any> {
     if (GlobalConfig.menuMode === "horizontal") {
       return null
     }
-    let width = this.props.LayoutStore.collapsedWidth;
+    let width = Store.Meun.collapsedWidth;
 
     return (
       <>
@@ -33,7 +32,7 @@ export default class App extends React.Component<any, any> {
 export class AppLogo extends React.Component<any, any> {
   render() {
     let title = GlobalConfig.default.title;
-    if (this.props.LayoutStore.collapsed) {
+    if (Store.Meun.collapsed) {
       title = "";
     }
     return (
@@ -58,12 +57,12 @@ export class AppMenu extends React.Component<{ mode?: "horizontal" | "inline", [
       </Menu.Item>
     })
   }
-  runderSubMenu() {
-    return Store.Meun.subMenu.map((menu, index) => {
+  runderSubMenu(Meun) {
+    return Meun.map((menu, index) => {
       if (menu.Children && menu.Children.length > 0) {
         return <SubMenu key={menu.Id} title={<span>{renderIconTitle(menu)}</span>}>
           {
-            this.renderMenu(menu, index)
+            this.runderSubMenu(menu.Children)
           }
         </SubMenu>
       }
@@ -72,6 +71,24 @@ export class AppMenu extends React.Component<{ mode?: "horizontal" | "inline", [
       </Menu.Item>
     })
   }
+  defaultOpenKeys = [];
+  getDefaultOpenKeys(Menus, Menu, OpenKeys = []) {
+    const ParentId = lodash.get(Menu, 'ParentId');
+    if (ParentId) {
+      OpenKeys.push(ParentId);
+      const Parent = lodash.find(Menus, ["Id", ParentId]);
+      if (Parent.ParentId) {
+        this.getDefaultOpenKeys(Menus, Parent, OpenKeys);
+      }
+    }
+    return OpenKeys
+  }
+  componentWillMount() {
+    this.defaultOpenKeys = this.getDefaultOpenKeys(Store.Meun.ParallelMenu, this.getMenu());
+  }
+  getMenu() {
+    return lodash.find(Store.Meun.ParallelMenu, ["Url", this.props.location.pathname]);
+  }
   render() {
     const props: MenuProps = {
       theme: "dark",
@@ -79,16 +96,15 @@ export class AppMenu extends React.Component<{ mode?: "horizontal" | "inline", [
       selectedKeys: [],
       defaultOpenKeys: [],
       style: { borderRight: 0 },
-      // inlineCollapsed: this.props.LayoutStore.collapsed,
+      // inlineCollapsed: Store.Meun.collapsed,
     }
-    const find = lodash.find(Store.Meun.ParallelMenu, ["Url", this.props.location.pathname]);
-    props.selectedKeys.push(lodash.get(find, 'Id', '/'));
-    props.defaultOpenKeys.push(lodash.get(find, 'ParentId', ''));
+    props.selectedKeys.push(lodash.get(this.getMenu(), 'Id', '/'));
     if (props.mode === "inline") {
-      props.style.width = this.props.LayoutStore.collapsedWidth;
-      props.inlineCollapsed = this.props.LayoutStore.collapsed
+      props.style.width = Store.Meun.collapsedWidth;
+      props.inlineCollapsed = Store.Meun.collapsed;
+      props.defaultOpenKeys = this.defaultOpenKeys; //this.getDefaultOpenKeys(Store.Meun.ParallelMenu, find);
     }
-    let width = this.props.LayoutStore.collapsedWidth;
+    // let width = Store.Meun.collapsedWidth;
     return (
       <Menu
         {...props}
@@ -98,17 +114,13 @@ export class AppMenu extends React.Component<{ mode?: "horizontal" | "inline", [
             <Icon type="home" /><span>首页</span>
           </Link>
         </Menu.Item>
-        {this.runderSubMenu()}
+        {this.runderSubMenu([...Store.Meun.subMenu])}
       </Menu>
     );
   }
 }
 export function renderIconTitle(menu) {
   let icon = null;
-  if (menu.Icon && menu.Icon.length === 36) {
-    icon = <img className='ant-menu-item-img' src={RequestFiles.onFileDownload(menu.Icon)} alt="" />
-  } else {
-    icon = <Icon type={menu.Icon || 'appstore'} />
-  }
+  icon = <Icon type={menu.Icon || 'appstore'} />
   return <>{icon}<span>{menu.Text}</span> </>
 }

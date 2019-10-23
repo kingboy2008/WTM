@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace WalkingTec.Mvvm.TagHelpers.LayUI
@@ -43,6 +43,8 @@ namespace WalkingTec.Mvvm.TagHelpers.LayUI
         /// </summary>
         public bool PostCurrentForm { get; set; }
 
+        public bool Max { get; set; }
+
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
             if (IsLink == false)
@@ -60,20 +62,35 @@ namespace WalkingTec.Mvvm.TagHelpers.LayUI
                 string windowid = Guid.NewGuid().ToString();
                 if (PostCurrentForm == true && context.Items.ContainsKey("formid"))
                 {
-                    Click = $"ff.OpenDialog('{Url}', '{windowid}', '{WindowTitle ?? ""}',{WindowWidth?.ToString() ?? "null"}, {WindowHeight?.ToString() ?? "null"}, ff.GetFormData('{context.Items["formid"]}'))";
+                    Click = $"ff.OpenDialog('{Url}', '{windowid}', '{WindowTitle ?? ""}',{WindowWidth?.ToString() ?? "null"}, {WindowHeight?.ToString() ?? "null"}, ff.GetPostData('{context.Items["formid"]}'),{Max.ToString().ToLower()})";
                 }
                 else
                 {
-                    Click = $"ff.OpenDialog('{Url}', '{windowid}', '{WindowTitle ?? ""}',{WindowWidth?.ToString() ?? "null"}, {WindowHeight?.ToString() ?? "null"})";
+                    Click = $"ff.OpenDialog('{Url}', '{windowid}', '{WindowTitle ?? ""}',{WindowWidth?.ToString() ?? "null"}, {WindowHeight?.ToString() ?? "null"},undefined,{Max.ToString().ToLower()})";
                 }
             }
             else if(Target == ButtonTargetEnum.self)
             {
-                Click = $"ff.LoadPage('{Url}')";
+                if (PostCurrentForm == true && context.Items.ContainsKey("formid"))
+                {
+                    Click = $"ff.BgRequest('{Url}',ff.GetPostData('{context.Items["formid"]}'))";
+                }
+                else
+                {
+                    Click = $"ff.BgRequest('{Url}')";
+                }
             }
             else if(Target == ButtonTargetEnum.newwindow)
             {
-                Click = $"ff.SetCookie('#{Url}','{WindowTitle??""}',true);window.open('/Home/PIndex#{Url}')";
+                if (Url.StartsWith("~"))
+                {
+                    Url = Url.TrimStart('~');
+                    Click = $"ff.SetCookie('#{Url}','{WindowTitle ?? ""}',true);window.open('{Url}')";
+                }
+                else
+                {
+                    Click = $"ff.SetCookie('#{Url}','{WindowTitle ?? ""}',true);window.open('/Home/PIndex#{Url}')";
+                }
             }
             base.Process(context, output);
         }
