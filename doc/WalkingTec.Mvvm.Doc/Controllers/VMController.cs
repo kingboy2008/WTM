@@ -1,14 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WalkingTec.Mvvm.Core;
 using WalkingTec.Mvvm.Mvc;
 
 namespace WalkingTec.Mvvm.Doc.Controllers
 {
-    [Public]
+    [AllowAnonymous]
     [ActionDescription("视图模型层")]
     public class VMController : BaseController
     {
@@ -26,8 +23,32 @@ namespace WalkingTec.Mvvm.Doc.Controllers
             return PartialView();
         }
 
-        [ActionDescription("PagedListVM")]
+        [ActionDescription("列表介绍")]
         public IActionResult List()
+        {
+            return PartialView();
+        }
+
+        [ActionDescription("动作配置")]
+        public IActionResult ListAction()
+        {
+            return PartialView();
+        }
+
+        [ActionDescription("列配置")]
+        public IActionResult ListColumn()
+        {
+            return PartialView();
+        }
+
+        [ActionDescription("查询模式")]
+        public IActionResult SearchMode()
+        {
+            return PartialView();
+        }
+
+        [ActionDescription("事务")]
+        public IActionResult Transaction()
         {
             return PartialView();
         }

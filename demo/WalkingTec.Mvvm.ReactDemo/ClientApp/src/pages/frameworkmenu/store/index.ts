@@ -1,5 +1,7 @@
 ﻿import { BindAll } from 'lodash-decorators';
-import DataSource from 'store/dataSource';
+import lodash from 'lodash';
+import DataSource, { ISearchParams } from 'store/dataSource';
+import { message } from 'antd';
 @BindAll()
 export class Store extends DataSource {
     constructor() {
@@ -46,6 +48,54 @@ export class Store extends DataSource {
                 }
             }
         });
+    }
+    /**
+     * 刷新菜单
+     */
+    async onRefreshMenu() {
+        const res = await this.Observable.Request.ajax('/_FrameworkMenu/RefreshMenu').toPromise();
+        // console.log("TCL: Store -> onRefreshMenu -> res", res)
+        message.info(res.Value)
+    }
+    /** 搜索 */
+    async onSearch(params?: ISearchParams) {
+        try {
+            this.PageState.tableLoading = true;
+            const res = await this.Observable.onSearch(params);
+            // 格式化树结构数据
+            res.Data = res.Data.map(value => {
+                value.treePath = [value.PageName];
+                if (value.ParentID) {
+                    value.treePath = this.recursionTree(res.Data, value.ParentID, value.treePath);
+                }
+                return value;
+            });
+            console.log("TCL: Store -> onSearch -> res.Data", res.Data)
+
+            this.DataSource.tableList = res;
+            return res;
+        } catch (error) {
+            console.warn(error)
+        }
+        finally {
+            this.PageState.tableLoading = false;
+        }
+    }
+    /**
+    * 递归 格式化 树
+    * @param datalist 
+    * @param ParentId 
+    * @param children 
+    */
+    recursionTree(datalist, ParentId, children = []) {
+        const findData = lodash.find(datalist, ['ID', ParentId]);
+        if (findData) {
+            children.unshift(findData.PageName);
+            if (findData.ParentID) {
+                this.recursionTree(datalist, findData.ParentID, children);
+            }
+        }
+        return children;
     }
 }
 export default new Store();

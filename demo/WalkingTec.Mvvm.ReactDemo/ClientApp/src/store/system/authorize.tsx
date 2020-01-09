@@ -42,15 +42,15 @@ export default AuthorizeStore
  * @param PageParams 
  */
 export function AuthorizeDecorator(PageParams: { PageStore: PageStore }) {
-    return function (Component: React.ComponentClass<any, any>): any {
-        return class extends Component {
-            constructor(props) {
-                super(props);
-                // PageParams.PageStore.defaultSearchParams = lodash.get(this.props, "defaultSearchParams", {});
+    return function <T extends { new(...args: any[]): React.Component<any, any> }>(constructor: T) {
+        return class extends constructor {
+            // constructor(props) {
+            //     super(props);
+            //     // PageParams.PageStore.defaultSearchParams = lodash.get(this.props, "defaultSearchParams", {});
+            // }
+            shouldComponentUpdate() {
+                return false
             }
-            // // shouldComponentUpdate() {
-            // //     return false
-            // // }
             // componentWillMount() {
 
             //     // console.log(this.props)
@@ -59,6 +59,7 @@ export function AuthorizeDecorator(PageParams: { PageStore: PageStore }) {
             //     super.componentWillMount && super.componentWillMount()
             // }
             render(): any {
+                console.log("TCL: extends -> returnfunction<Textends{new -> AuthorizeStore.onPassageway(this.props)", AuthorizeStore.onPassageway(this.props))
                 if (AuthorizeStore.onPassageway(this.props)) {
                     return super.render();
                 }

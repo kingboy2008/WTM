@@ -21,7 +21,7 @@ namespace WalkingTec.Mvvm.TagHelpers.LayUI
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
         {
             output.TagName = "div";
-            string tid = Guid.NewGuid().ToString().Replace("-", "");
+            string tid = Guid.NewGuid().ToString("N");
             output.Attributes.Add("lay-filter", tid);
             if (PanelType == PanelType.Collapse)
             {
@@ -51,19 +51,21 @@ namespace WalkingTec.Mvvm.TagHelpers.LayUI
             }
             output.PostElement.AppendHtml($@"
 <script>
-    var element = layui.element;
-    element.init();
-element.on('collapse({tid})', function(data){{
-setTimeout(function () {{ 
-if (typeof(Event) === 'function') {{
-  window.dispatchEvent(new Event('resize'));
-}} else {{
-  var evt = window.document.createEvent('UIEvents'); 
-  evt.initUIEvent('resize', true, false, window, 0); 
-  window.dispatchEvent(evt);
-}}}}, 10);     
-}});
-
+layui.use(['element'],function(){{
+  var element = layui.element;
+  element.init();
+  element.on('collapse({tid})', function(data){{
+    setTimeout(function () {{
+      if (typeof(Event) === 'function') {{
+        window.dispatchEvent(new Event('resize'));
+      }} else {{
+        var evt = window.document.createEvent('UIEvents');
+        evt.initUIEvent('resize', true, false, window, 0);
+        window.dispatchEvent(evt);
+      }}
+    }}, 10);
+  }});
+}})
 </script>
 ");
             base.Process(context, output);

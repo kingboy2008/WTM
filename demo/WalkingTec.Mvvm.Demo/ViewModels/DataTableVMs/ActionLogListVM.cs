@@ -1,71 +1,54 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MySql.Data.MySqlClient;
-using System;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using System.Threading.Tasks;
 using WalkingTec.Mvvm.Core;
 
 namespace WalkingTec.Mvvm.Demo.ViewModels.DataTableVMs
 {
-    public class ActionLogListVM : BasePagedListVM<ActionLog,BaseSearcher>
+    public class ActionLogListVM : BasePagedListVM<CustomView, BaseSearcher>
     {
         protected override List<GridAction> InitGridAction()
         {
             var actions = new List<GridAction>
             {
-                this.MakeStandardAction("ActionLog", GridActionStandardTypesEnum.Details, "详细","_Admin", dialogWidth: 800).SetHideOnToolBar(true),
-                this.MakeStandardExportAction(null,false,ExportEnum.Excel)
+                this.MakeAction(null,null,"ScriptButton",null, GridActionParameterTypesEnum.NoId).SetOnClickScript("test"),
+                this.MakeAction("ActionLog","Details","详情(Dialog)","Details dialog", GridActionParameterTypesEnum.SingleId,"_Admin").SetShowDialog(true).SetShowInRow(true).SetQueryString("a=1"),
+                this.MakeAction("ActionLog","Details","详情(新窗口)","Details new window", GridActionParameterTypesEnum.SingleId,"_Admin").SetShowDialog(true).SetIsRedirect(true).SetShowInRow(true).SetQueryString("a=2"),
+                this.MakeAction("ActionLog","Details","详情(本窗口)","Details new window", GridActionParameterTypesEnum.SingleId,"_Admin").SetShowDialog(false).SetIsRedirect(true).SetShowInRow(true).SetQueryString("a=3"),
+                this.MakeStandardAction("ActionLog", GridActionStandardTypesEnum.ExportExcel, "导出","_Admin")
             };
             return actions;
         }
 
-        protected override IEnumerable<IGridColumn<ActionLog>> InitGridHeader()
+        protected override IEnumerable<IGridColumn<CustomView>> InitGridHeader()
         {
-            var header = new List<GridColumn<ActionLog>>();
-
-            header.Add(this.MakeGridHeader(x => x.LogType, 80).SetForeGroundFunc((entity) => {
-                if (entity.LogType == ActionLogTypesEnum.Exception)
-                {
-                    return "FF0000";
-                }
-                else
-                {
-                    return "";
-                }
-            }));
-            header.Add(this.MakeGridHeader(x => x.ModuleName, 120));
-            header.Add(this.MakeGridHeader(x => x.ActionName, 120));
-            header.Add(this.MakeGridHeader(x => x.ITCode, 120));
-            header.Add(this.MakeGridHeader(x => x.ActionUrl, 200));
-            header.Add(this.MakeGridHeader(x => x.ActionTime, 200).SetSort(true));
-            header.Add(this.MakeGridHeader(x => x.Duration, 100).SetSort(true).SetForeGroundFunc((entity) => {
-                if (entity.Duration <= 1)
-                {
-                    return "008000";
-                }
-                else if (entity.Duration <= 3)
-                {
-                    return "FFC90E";
-                }
-                else
-                {
-                    return "FF0000";
-                }
-            }).SetFormat((entity, v) => { return ((double)v).ToString("f2"); }));
-            header.Add(this.MakeGridHeader(x => x.IP, 120));
-            header.Add(this.MakeGridHeader(x => x.Remark));
-            header.Add(this.MakeGridHeaderAction(width: 120));
+            var header = new List<GridColumn<CustomView>>();
+            var topheader = this.MakeGridHeaderParent("父表头");
+            topheader.SetChildren(
+                this.MakeGridHeader(x => x.test1, 120),
+                this.MakeGridHeader(x => x.test2, 120)
+            );
+            header.Add(topheader);
+            header.Add(this.MakeGridHeaderAction(width: 320));
 
             return header;
         }
 
         public override DbCommand GetSearchCommand()
         {
-            var sql = string.Format("SELECT top 10 * from actionlogs");
-
+            string sql = string.Empty;
+            switch (ConfigInfo.DbType)
+            {
+                case DBTypeEnum.MySql:
+                case DBTypeEnum.PgSql:
+                case DBTypeEnum.SQLite:
+                    sql = string.Format("SELECT id, itcode as test1, modulename as test2 from actionlogs limit 10"); break;
+                case DBTypeEnum.SqlServer:
+                    sql = string.Format("SELECT top 10 id, itcode as test1, modulename as test2 from actionlogs"); break;
+                case DBTypeEnum.Oracle:
+                    sql = string.Format("SELECT id, itcode as test1, modulename as test2 from actionlogs fetch next 10 rows only"); break;
+            }
             var cmd = DC.Database.GetDbConnection().CreateCommand();
             cmd.CommandText = sql;
             cmd.CommandType = CommandType.Text;
@@ -75,5 +58,11 @@ namespace WalkingTec.Mvvm.Demo.ViewModels.DataTableVMs
             //cmd.CommandType = System.Data.CommandType.StoredProcedure;
             return cmd;
         }
+    }
+
+    public class CustomView : TopBasePoco
+    {
+        public string test1 { get; set; }
+        public string test2 { get; set; }
     }
 }

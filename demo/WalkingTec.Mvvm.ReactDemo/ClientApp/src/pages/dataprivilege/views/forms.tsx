@@ -1,13 +1,10 @@
 ﻿import { Col } from 'antd';
-import { DialogForm, DialogFormDes, DialogFormSubmit, FormItem, InfoShellLayout, DialogLoadData, } from 'components/dataView';
-import { DesError } from 'components/decorators'; //错误
+import { DialogFormDes, FormItem, InfoShellLayout } from 'components/dataView';
 import lodash from 'lodash';
 import { observer } from 'mobx-react';
 import * as React from 'react';
 import Store from '../store'; //页面状态
 import Models from './models'; //模型
-import { bool } from 'prop-types';
-import { Help } from 'utils/Help';
 
 @DialogFormDes({
     onFormSubmit(values) {
@@ -22,8 +19,8 @@ export class InsertForm extends React.Component<any, any> {
             ...this.props,
             models: this.models,
         }
-        const Isgroup = Models.getValue(props, "DpType",0) == "0"
-        const Isall = Models.getValue(props, "IsAll",true) == "true"
+        const Isgroup = Models.getValue(props, "DpType", 0) == "0"
+        const Isall = Models.getValue(props, "IsAll", true) == "true"
         return <InfoShellLayout>
             <FormItem {...props} fieId="DpType" layout="row" value='0' />
             <FormItem {...props} fieId="UserItCode" hidden={Isgroup} />
@@ -51,7 +48,6 @@ export class UpdateForm extends React.Component<WTM.FormProps, any> {
     // 创建模型
     models = Models.editModels(this.props);
     componentDidMount() {
-        console.log("isall in mount", this.props.form.getFieldValue("IsAll"));
     }
     render() {
         const { form } = this.props;
@@ -60,8 +56,10 @@ export class UpdateForm extends React.Component<WTM.FormProps, any> {
             ...this.props,
             models: this.models,
         }
+        lodash.update(props, 'defaultValues.IsAll', value => String(value));
+        lodash.update(props, 'defaultValues.DpType', value => String(value));
         getFieldDecorator('Entity.ID', { initialValue: lodash.get(this.props.defaultValues, 'Entity.ID') })
-        const Isgroup = Models.getValue(props,"DpType") == "0"
+        const Isgroup = Models.getValue(props, "DpType") == "0"
         const Isall = Models.getValue(props, "IsAll") == "true"
         return <InfoShellLayout>
             <FormItem {...props} fieId="DpType" layout="row" />

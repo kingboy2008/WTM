@@ -1,5 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json;
 using Npgsql;
 using NpgsqlTypes;
 using NPOI.HSSF.UserModel;
@@ -45,20 +46,32 @@ namespace WalkingTec.Mvvm.Core
         where TSearcher : BaseSearcher
     {
 
+        public string TotalText { get; set; } = Program._localizer?["Total"];
+
         public virtual DbCommand GetSearchCommand()
         {
             return null;
         }
 
+        private int? _childrenDepth;
+
+
         /// <summary>
         /// 多级表头深度  默认 1级
         /// </summary>
-        public int ChildrenDepth { get; set; }
-
+        public int GetChildrenDepth()
+        {
+            if (_childrenDepth == null)
+            {
+                _childrenDepth = _getHeaderDepth();
+            }
+            return _childrenDepth.Value;
+        }
 
         /// <summary>
         /// GridHeaders
         /// </summary>
+        [JsonIgnore]
         public IEnumerable<IGridColumn<TModel>> GridHeaders { get; set; }
 
         /// <summary>
@@ -74,10 +87,21 @@ namespace WalkingTec.Mvvm.Core
             return GridHeaders;
         }
 
+        /// <summary>
+        /// 计算多级表头深度
+        /// </summary>
+        /// <returns></returns>
+        private int _getHeaderDepth()
+        {
+            IEnumerable<IGridColumn<TModel>> headers = GetHeaders();
+            return headers.Max(x => x.MaxDepth);
+        }
         private List<GridAction> _gridActions;
+
         /// <summary>
         /// 页面动作
         /// </summary>
+        [JsonIgnore]
         public List<GridAction> GridActions
         {
             get
@@ -167,7 +191,7 @@ namespace WalkingTec.Mvvm.Core
                 var dr = sheets[sheetindex].CreateRow(rowIndex - sheetindex * 60000) as HSSFRow;
                 foreach (var baseCol in GridHeaders)
                 {
-                    //处理枚举变量的多语言 
+                    //处理枚举变量的多语言
                     bool IsEmunBoolParp = false;
                     var proType = baseCol.FieldType;
                     if (proType.IsEnumOrNullableEnum())
@@ -181,7 +205,7 @@ namespace WalkingTec.Mvvm.Core
                         //获取数据，并过滤特殊字符
                         string text = Regex.Replace(col.GetText(row).ToString(), @"<[^>]*>", String.Empty);
 
-                        //处理枚举变量的多语言 
+                        //处理枚举变量的多语言
 
                         if (IsEmunBoolParp)
                         {
@@ -349,7 +373,7 @@ namespace WalkingTec.Mvvm.Core
         /// <summary>
         ///记录批量操作时列表中选择的Id
         /// </summary>
-        public List<Guid> Ids { get; set; }
+        public List<string> Ids { get; set; }
 
         /// <summary>
         /// 每页行数
@@ -396,6 +420,7 @@ namespace WalkingTec.Mvvm.Core
         /// <summary>
         /// 替换查询条件，如果被赋值，则列表会使用里面的Lambda来替换原有Query里面的Where条件
         /// </summary>
+        [JsonIgnore()]
         public Expression<Func<TopBasePoco, bool>> ReplaceWhere { get; set; }
 
         /// <summary>
@@ -500,18 +525,8 @@ namespace WalkingTec.Mvvm.Core
         /// <returns>搜索语句</returns>
         public virtual IOrderedQueryable<TModel> GetCheckedExportQuery()
         {
-            var baseQuery = GetExportQuery();
-            if (ReplaceWhere == null)
-            {
-                WhereReplaceModifier mod = new WhereReplaceModifier(x => Ids.Contains(x.ID));
-                var newExp = mod.Modify(baseQuery.Expression);
-                var newQuery = baseQuery.Provider.CreateQuery<TModel>(newExp) as IOrderedQueryable<TModel>;
-                return newQuery;
-            }
-            else
-            {
-                return baseQuery;
-            }
+            var baseQuery = GetBatchQuery();
+            return baseQuery;
         }
 
         /// <summary>
@@ -521,10 +536,9 @@ namespace WalkingTec.Mvvm.Core
         public virtual IOrderedQueryable<TModel> GetBatchQuery()
         {
             var baseQuery = GetSearchQuery();
-            var ids = Ids ?? new List<Guid>();
             if (ReplaceWhere == null)
             {
-                WhereReplaceModifier mod = new WhereReplaceModifier(x => ids.Contains(x.ID));
+                var mod = new WhereReplaceModifier<TModel>(Ids.GetContainIdExpression<TModel>());
                 var newExp = mod.Modify(baseQuery.Expression);
                 var newQuery = baseQuery.Provider.CreateQuery<TModel>(newExp) as IOrderedQueryable<TModel>;
                 return newQuery;
@@ -582,7 +596,7 @@ namespace WalkingTec.Mvvm.Core
                 //如果设定了替换条件，则使用替换条件替换Query中的Where语句
                 if (ReplaceWhere != null)
                 {
-                    var mod = new WhereReplaceModifier(ReplaceWhere);
+                    var mod = new WhereReplaceModifier<TopBasePoco>(ReplaceWhere);
                     var newExp = mod.Modify(query.Expression);
                     query = query.Provider.CreateQuery<TModel>(newExp) as IOrderedQueryable<TModel>;
                 }
@@ -611,7 +625,7 @@ namespace WalkingTec.Mvvm.Core
                         }
                         if (Searcher.Limit == 0)
                         {
-                            Searcher.Limit = ConfigInfo?.RPP ?? 20;
+                            Searcher.Limit = ConfigInfo?.UiOptions.DataTable.RPP ?? 20;
                         }
                         //根据返回数据的数量，以及预先设定的每页行数来设定数据量和总页数
                         Searcher.Count = count;
@@ -813,7 +827,8 @@ namespace WalkingTec.Mvvm.Core
             {
                 foreach (var item in EntityList)
                 {
-                    if (Ids.Contains(item.ID))
+                    var id = item.GetID();
+                    if (Ids.Contains(id.ToString()))
                     {
                         item.Checked = true;
                     }
@@ -868,7 +883,16 @@ namespace WalkingTec.Mvvm.Core
             if (root != null)
             {
                 var aroot = root as List<GridColumn<TModel>>;
-                var remove = aroot.Where(x => x.ColumnType == GridColumnTypeEnum.Action || x.FieldName.ToLower() == "id").ToList();
+                List<GridColumn<TModel>> remove = null;
+                var idpro = typeof(TModel).GetProperties().Where(x => x.Name.ToLower() == "id").Select(x => x.PropertyType).FirstOrDefault();
+                if (idpro == typeof(string))
+                {
+                    remove = aroot.Where(x => x.ColumnType == GridColumnTypeEnum.Action || x.Hide == true).ToList();
+                }
+                else
+                {
+                    remove = aroot.Where(x => x.ColumnType == GridColumnTypeEnum.Action || x.Hide == true || x.FieldName?.ToLower() == "id").ToList();
+                }
                 foreach (var item in remove)
                 {
                     aroot.Remove(item);
@@ -877,7 +901,7 @@ namespace WalkingTec.Mvvm.Core
                 {
                     if (child.Children != null && child.Children.Count() > 0)
                     {
-                        RemoveActionColumn(child.Children);
+                        RemoveActionAndIdColumn(child.Children);
                     }
                 }
             }
@@ -891,16 +915,16 @@ namespace WalkingTec.Mvvm.Core
         {
             GetHeaders();
             //寻找所有Header为错误信息的列，如果没有则添加
-            if (GridHeaders.Where(x => x.Title == "错误").FirstOrDefault() == null)
+            if (GridHeaders.Where(x => x.Field == "BatchError").FirstOrDefault() == null)
             {
                 var temp = GridHeaders as List<GridColumn<TModel>>;
                 if (temp.Where(x => x.ColumnType == GridColumnTypeEnum.Action).FirstOrDefault() == null)
                 {
-                    temp.Add(this.MakeGridColumn(x => x.BatchError, Width: 200, Header: "错误").SetForeGroundFunc(x => "ff0000"));
+                    temp.Add(this.MakeGridColumn(x => x.BatchError, Width: 200, Header: "Error").SetForeGroundFunc(x => "ff0000"));
                 }
                 else
                 {
-                    temp.Insert(temp.Count - 1, this.MakeGridColumn(x => x.BatchError, Width: 200, Header: "错误").SetForeGroundFunc(x => "ff0000"));
+                    temp.Insert(temp.Count - 1, this.MakeGridColumn(x => x.BatchError, Width: 200, Header: "Error").SetForeGroundFunc(x => "ff0000"));
                 }
             }
         }

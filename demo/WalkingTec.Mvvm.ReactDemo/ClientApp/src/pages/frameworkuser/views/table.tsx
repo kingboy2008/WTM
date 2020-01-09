@@ -1,85 +1,71 @@
-﻿import { columnsRender, columnsRenderImg, DataViewTable } from 'components/dataView';
-import { DesError } from 'components/decorators';
+
+import { ColDef, ColGroupDef } from 'ag-grid-community';
+import { AgGrid } from 'components/dataView';
+import { mergeLocales } from 'locale';
 import React from 'react';
 import Store from '../store';
 import Action from './action';
-/**
- * 列 信息配置
- * 完整参数列表 https://ant.design/components/table-cn/#components-table-demo-dynamic-settings
- * dataIndex:属性名称 区分大小写
- * title:表格显示的中文标题
- */
-const columns = [
-
-    {
-        dataIndex: "ITCode",
-        title: "账号",
-        render: columnsRender 
+mergeLocales({
+    "zh-CN": {
+        'frameworkuser.ITCode': '账号',
+        'frameworkuser.Name': '姓名',
+        'frameworkuser.Sex': '性别',
+        'frameworkuser.PhotoId': '照片',
+        'frameworkuser.IsValid': '是否有效',
+        'frameworkuser.RoleName_view': '角色',
+        'frameworkuser.GroupName_view': '用户组',
     },
-
-    {
-        dataIndex: "Name",
-        title: "姓名",
-        render: columnsRender 
-    },
-
-    {
-        dataIndex: "Sex",
-        title: "性别",
-        render: columnsRender 
-    },
-
-    {
-        dataIndex: "PhotoId",
-        title: "照片",
-        render: columnsRenderImg 
-    },
-
-    {
-        dataIndex: "IsValid",
-        title: "是否有效",
-        render: columnsRender 
-    },
-
-    {
-        dataIndex: "RoleName_view",
-        title: "角色",
-        render: columnsRender 
-    },
-
-    {
-        dataIndex: "GroupName_view",
-        title: "用户组",
-        render: columnsRender 
+    "en-US": {
+        'frameworkuser.ITCode': 'Account',
+        'frameworkuser.Name': 'Name',
+        'frameworkuser.Sex': 'Gender',
+        'frameworkuser.PhotoId': 'Photo',
+        'frameworkuser.IsValid': 'IsValid',
+        'frameworkuser.RoleName_view': 'RoleName',
+        'frameworkuser.GroupName_view': 'GroupName',
     }
-
+});
+// 列配置
+const columnDefs: (ColDef | ColGroupDef)[] = [
+    {
+        headerName: "frameworkuser.ITCode", field: "ITCode",
+    },
+    {
+        headerName: "frameworkuser.Name", field: "Name",
+    },
+    {
+        headerName: "frameworkuser.Sex", field: "Sex",
+    },
+    {
+        headerName: "frameworkuser.PhotoId", field: "PhotoId", cellRenderer: "columnsRenderImg", minWidth: 130
+    },
+    {
+        headerName: "frameworkuser.IsValid", field: "IsValid", cellRenderer: "columnsRenderBoolean"
+    },
+    {
+        headerName: "frameworkuser.RoleName_view", field: "RoleName_view",
+    },
+    {
+        headerName: "frameworkuser.GroupName_view", field: "GroupName_view",
+    },
 ]
-
 /**
  * 表格
  */
-@DesError
 export default class extends React.Component<any, any> {
-    /**
-     * 操作动作
-     */
-    renderColumns() {
-        const tableColumns: any[] = [...columns];
-        // 根据需求 加入行动作
-        if (true) {
-            tableColumns.push(
-                {
-                    title: '动作',
-                    dataIndex: 'Action',
-                    fixed: 'right',//固定 列
-                    width: 160,
-                    render: (text, record) => <Action.rowAction data={record} />
-                }
-            )
-        }
-        return tableColumns
-    }
     render() {
-        return <DataViewTable Store={Store} columns={this.renderColumns()} />
+        return <AgGrid
+            // 页面状态 
+            Store={Store}
+            // 列配置
+            columnDefs={columnDefs}
+            // 行操作 
+            rowAction={Action.rowAction}
+            // 行操作 col props 同 columnDefs配置相同
+            // rowActionCol={{ headerName: "操作" }}
+            // frameworkComponents={{
+            // }}
+            rowHeight={110}
+        />
     }
 }

@@ -1,103 +1,80 @@
-﻿import { columnsRender, columnsRenderImg, DataViewTable } from 'components/dataView';
-import { DesError } from 'components/decorators';
+﻿import { ColDef, ColGroupDef } from 'ag-grid-community';
+import { AgGrid } from 'components/dataView';
+import { mergeLocales } from 'locale';
 import React from 'react';
 import Store from '../store';
 import Action from './action';
-/**
- * 列 信息配置
- * 完整参数列表 https://ant.design/components/table-cn/#components-table-demo-dynamic-settings
- * dataIndex:属性名称 区分大小写
- * title:表格显示的中文标题
- */
-const columns = [
-
-    {
-        dataIndex: "LogType",
-        title: "类型",
-        render: columnsRender,
-        width:80
+mergeLocales({
+    "zh-CN": {
+        'actionlog.LogType': '类型',
+        'actionlog.ModuleName': '模块',
+        'actionlog.ActionName': '动作',
+        'actionlog.ITCode': 'ITCode',
+        'actionlog.ActionUrl': 'Url',
+        'actionlog.ActionTime': '操作时间',
+        'actionlog.Duration': '时长',
+        'actionlog.IP': 'IP',
+        'actionlog.Remark': '备注',
     },
-   {
-        dataIndex: "ModuleName",
-        title: "模块",
-       render: columnsRender,
-       width: 120
-    },
-
-    {
-        dataIndex: "ActionName",
-        title: "动作",
-        render: columnsRender,
-        width: 120
-    },
-
-    {
-        dataIndex: "ITCode",
-        title: "ITCode",
-        render: columnsRender,
-        width: 120
-    },
-
-    {
-        dataIndex: "ActionUrl",
-        title: "Url",
-        render: columnsRender,
-        width: 200
-    },
-
-    {
-        dataIndex: "ActionTime",
-        title: "操作时间",
-        render: columnsRender,
-        width: 200
-    },
-
-    {
-        dataIndex: "Duration",
-        title: "时长",
-        render: columnsRender,
-        width: 100
-    },
-    
-
-    {
-        dataIndex: "IP",
-        title: "IP",
-        render: columnsRender,
-        width: 120
-    },
-    {
-        dataIndex: "Remark",
-        title: "备注",
-        render: columnsRender 
+    "en-US": {
+        'actionlog.LogType': 'LogType',
+        'actionlog.ModuleName': 'Module',
+        'actionlog.ActionName': 'Action',
+        'actionlog.ITCode': 'ITCode',
+        'actionlog.ActionUrl': 'Url',
+        'actionlog.ActionTime': 'ActionTime',
+        'actionlog.Duration': 'Duration',
+        'actionlog.IP': 'IP',
+        'actionlog.Remark': 'Remark',
     }
+});
+// 列配置
+const columnDefs: (ColDef | ColGroupDef)[] = [
+    {
+        headerName: "actionlog.LogType", field: "LogType",
+    },
+    {
+        headerName: "actionlog.ModuleName", field: "ModuleName"
+    },
+    {
+        headerName: "actionlog.ActionName", field: "ActionName"
+    },
+    {
+        headerName: "actionlog.ITCode", field: "ITCode"
+    },
+    {
+        headerName: "actionlog.ActionUrl", field: "ActionUrl",
+    },
+    {
+        headerName: "actionlog.ActionTime", field: "ActionTime",
+    },
+    {
+        headerName: "actionlog.Duration", field: "Duration"
+    },
+    {
+        headerName: "actionlog.IP", field: "IP",
+    },
+    {
+        headerName: "actionlog.Remark", field: "Remark", enableRowGroup: false
+    },
 ]
-
 /**
  * 表格
  */
-@DesError
 export default class extends React.Component<any, any> {
-    /**
-     * 操作动作
-     */
-    renderColumns() {
-        const tableColumns: any[] = [...columns];
-        // 根据需求 加入行动作
-        if (true) {
-            tableColumns.push(
-                {
-                    title: '动作',
-                    dataIndex: 'Action',
-                    fixed: 'right',//固定 列
-                    width: 150,
-                    render: (text, record) => <Action.rowAction data={record} />
-                }
-            )
-        }
-        return tableColumns
-    }
     render() {
-        return <DataViewTable Store={Store} columns={this.renderColumns()} />
+        return <AgGrid
+            // 页面状态 
+            Store={Store}
+            // 列配置
+            columnDefs={columnDefs}
+            // 行操作 
+            rowAction={Action.rowAction}
+
+        // 行操作 col props 同 columnDefs配置相同
+        // rowActionCol={{ headerName: "操作" }}
+        // frameworkComponents={{
+        // }}
+        />
     }
 }

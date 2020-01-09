@@ -3,6 +3,8 @@ import { Tabs } from 'antd';
 import lodash from 'lodash';
 import { BindAll } from 'lodash-decorators';
 import From from "./form"
+import DataSource from "./form/dataSource"
+import { FormattedMessage } from 'react-intl';
 
 const TabPane = Tabs.TabPane;
 @BindAll()
@@ -14,16 +16,17 @@ export default class App extends React.Component<any, any> {
         // const activeKey = lodash.get(this.props, 'match.params.activeKey', '1');
         return (
             <Tabs
-                // activeKey={activeKey}
+                defaultActiveKey="1"
                 tabPosition="left"
                 onChange={this.onChange}
             >
                 <TabPane tab="表单" key="1">
-                    <From/>
+                   
+                    <From />
                 </TabPane>
-                <TabPane tab="Tab 2" key="2">
-                    Content of Tab Pane 2
-                    </TabPane>
+                <TabPane tab="数据获取 " key="2">
+                    <DataSource />
+                </TabPane>
                 <TabPane tab="Tab 3" key="3">
                     Content of Tab Pane 3
                 </TabPane>
